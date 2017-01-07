@@ -18,29 +18,25 @@ function main {
 			mkdir -p "contributors"
 
 			pushd "contributors" >/dev/null
+				local name
+				local contributors
 
-			local name
-			local contributors
+				while read name;
+				do
+					read contributors;
+					local contributorsOutfile="${name}.json"
 
-			while read name;
-			do
-				read contributors;
-				local contributorsOutfile="${name}.json"
+					[[ -s "$contributorsOutfile" ]] || fetchGithub "$contributors" > "$contributorsOutfile"
+				done < <(cat "../sources.json" | jq --raw-output 'map(.name, .contributors_url) | .[]')
 
-				[[ -s "$contributorsOutfile" ]] || fetchGithub "$contributors" > "$contributorsOutfile"
-			done < <(cat "../sources.json" | jq --raw-output 'map(.name, .contributors_url) | .[]')
+				local aggregatedContributorsOutfile="../contributors.json"
 
-			local aggregatedContributorsOutfile="../contributors.json"
+				# Seems jq acts differently if using `cat *.json` versus `jq --slurp '...' *.json`.
+				jq --slurp 'map(map({ login, contributions }) | .[]) | group_by(.login) | map({ login: .[0].login, contributions: (map(.contributions) | add) }) | sort_by(.contributions)' *.json > "$aggregatedContributorsOutfile"
 
-			# Seems jq acts differently if using `cat *.json` versus `jq --slurp '...' *.json`.
-			jq --slurp 'map(map({ login, contributions }) | .[]) | group_by(.login) | map({ login: .[0].login, contributions: (map(.contributions) | add) }) | sort_by(.contributions)' *.json > "$aggregatedContributorsOutfile"
-
-			<"$aggregatedContributorsOutfile" jq '.'
-
+				<"$aggregatedContributorsOutfile" jq '.'
 			popd >/dev/null
-
 		popd >/dev/null
-
 	popd >/dev/null
 }
 
