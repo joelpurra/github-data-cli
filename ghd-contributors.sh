@@ -2,33 +2,18 @@
 
 set -e
 set -u
+set -o pipefail
 
-readonly SCRIPT_NAME=$(basename "$BASH_SOURCE")
-readonly outputPrefix="output";
-
-source "functions/basic.sh"
-source "functions/json.sh"
-source "functions/github.sh"
+source "${BASH_SOURCE%/*}/shared/functions.sh"
+source "${BASH_SOURCE%/*}/shared/functionality.sh"
+source "${BASH_SOURCE%/*}/shared/github/functionality.sh"
 
 function main {
-	local -r username="$1"
-	shift
+	pushd "$configOutdir" >/dev/null
+			pushd "$executionStartTimestamp" >/dev/null
 
-	local -r timestamp=$(getUTCDatestamp)
-
-	local -r outdir="${outputPrefix}/${username}"
-
-	mkdir -p "$outdir"
-
-	pushd "$outdir" >/dev/null
-
-		mkdir -p "$timestamp"
-
-			pushd "$timestamp" >/dev/null
-
-			fetchAllPages "repositories.json" "https://api.github.com/users/${username}/repos"
-
-			cat "repositories.json" | jq 'map(select((.private or .fork or (.mirror_url | type) != "null") | not))' >"sources.json"
+			fetchGithubRepositories "$configUsername"
+			extractGithubSources
 
 			mkdir -p "contributors"
 
@@ -58,18 +43,5 @@ function main {
 
 	popd >/dev/null
 }
-
-function checkInput {
-	set +u
-	if [[ -z "$1" ]];
-	then
-		die "Missing username; provide it on the command line"
-	fi
-	set -u
-}
-
-checkInput "$@"
-
-checkGithubPrerequisites
 
 main "$@"

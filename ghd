@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+set -o pipefail
+
+declare PROJECT_PREFIX="$(basename "$BASH_SOURCE")"
+
+if (( $(id -u) == 0 ));
+then
+   echo -E "${PROJECT_PREFIX}: cannot be executed with root privileges." 1>&2
+   exit 1
+fi
+
+# Sometimes the $PWD gets pulled out from under the user (unmounted, deleted etcetera).
+# Bail before anything else happens because of actions (perhaps even deletions) based on $PWD.
+# Actually, specifically using `bash` as the hash-bang will print an error message already.
+# When using plain `sh` there seems to be none.
+if [[ ! -d "$(pwd 2>/dev/null)" ]];
+then
+	echo -E "${PROJECT_PREFIX}: the working directory is unavailable, cannot continue: '$PWD'" 1>&2
+	exit 1
+fi
+
+function crossplatformReadlink {
+	# https://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
+	# https://stackoverflow.com/a/1116890
+	TARGET_FILE="$1"
+
+	cd `dirname $TARGET_FILE`
+	TARGET_FILE=`basename $TARGET_FILE`
+
+	# Iterate down a (possible) chain of symlinks
+	while [ -L "$TARGET_FILE" ]
+	do
+	    TARGET_FILE=`readlink $TARGET_FILE`
+	    cd `dirname $TARGET_FILE`
+	    TARGET_FILE=`basename $TARGET_FILE`
+	done
+
+	# Compute the canonicalized name by finding the physical path
+	# for the directory we're in and appending the target file.
+	PHYS_DIR=`pwd -P`
+	RESULT=$PHYS_DIR/$TARGET_FILE
+	echo "$RESULT"
+}
+
+# Must be executed in this file.
+# Used to recursively call ghd and to find files to `source`.
+GHD_SOURCE=$(crossplatformReadlink "$BASH_SOURCE")
+
+exec "${GHD_SOURCE%/*}/${PROJECT_PREFIX}.sh" "$@"

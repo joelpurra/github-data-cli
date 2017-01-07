@@ -1,5 +1,5 @@
 function die {
-	echo -E "${SCRIPT_NAME} fatal: $@" >&2
+	echo -E "${PROJECT_PREFIX} fatal: $@" >&2
 	exit 1
 }
 
