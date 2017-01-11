@@ -10,3 +10,7 @@ function getUTCDatestamp {
 function getTimestampAtEpoch {
 	date -r "$1" -u +%FT%TZ
 }
+
+function getMostRecentOutputDates() {
+	find "$configOutdir" -mindepth 1 -maxdepth 1 -type d -name '*-*-*' | tail -n 2 | xargs -I '{}' basename -a '{}'
+}
