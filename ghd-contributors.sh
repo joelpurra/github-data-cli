@@ -32,7 +32,7 @@ function main {
 				local aggregatedContributorsOutfile="../contributors.json"
 
 				# Seems jq acts differently if using `cat *.json` versus `jq --slurp '...' *.json`.
-				jq --slurp 'map(map({ login, contributions }) | .[]) | group_by(.login) | map({ login: .[0].login, contributions: (map(.contributions) | add) }) | sort_by(.contributions)' *.json > "$aggregatedContributorsOutfile"
+				jq --slurp 'map(map({ login, contributions }) | .[]) | group_by(.login) | map({ login: .[0].login, contributions: (map(.contributions) | add) }) | sort_by(.contributions, .login)' *.json > "$aggregatedContributorsOutfile"
 
 				<"$aggregatedContributorsOutfile" jq '.'
 			popd >/dev/null
