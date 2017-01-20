@@ -31,7 +31,8 @@ then
 
 	if ! externalExecutableExists "$executable";
 	then
-		echo -E "${PROJECT_PREFIX}: '${action}' is not a action." 1>&2; exit 1;
+		echo -E "${PROJECT_PREFIX}: '${action}' is not a action." 1>&2;
+		exit 1;
 	fi
 fi
 

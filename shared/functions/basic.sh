@@ -1,5 +1,13 @@
+function errorMsg {
+	echo -E "${PROJECT_PREFIX}: ERROR $@" >&2
+}
+
+function debugMsg {
+	echo -E "${PROJECT_PREFIX}: DEBUG $@" >&2
+}
+
 function die {
-	echo -E "${PROJECT_PREFIX} fatal: $@" >&2
+	errorMsg "fatal" "$@"
 	exit 1
 }
 

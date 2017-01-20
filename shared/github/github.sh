@@ -3,7 +3,7 @@ readonly HEADERS_FILE=".headers.json~"
 function fetchGithub {
 	local -a fetchArgs=( "$@" )
 	local url="${fetchArgs[-1]}"
-	echo "$url" >&2
+	debugMsg "$url"
 	unset fetchArgs[${#fetchArgs[@]}-1]
 	local -a urlParts
 	IFS='?' read -r -a urlParts <<< "$url"
@@ -76,7 +76,7 @@ function fetchAllPages {
 
 	while fetchPage "$outfile" "$pageNumber" "$url";
 	do
-		echo "$outfile.${pageNumber}~"
+		debugMsg "$outfile.${pageNumber}~"
 		pageNumber+=1
 	done
 
@@ -96,10 +96,10 @@ function main {
 
 	if (( remaining <= 0 ));
 	then
-		echo "$rateLimitObject" | jq '.' >&2
+		debugMsg "$rateLimitObject" | jq '.'
 		die "Hit rate limit until ${resetTimestamp}!"
 	else
-		echo "Have ${remaining} API calls remaining until ${resetTimestamp}" >&2
+		debugMsg "Have ${remaining} API calls remaining until ${resetTimestamp}"
 	fi
 
 	mkdir -p "$username"
@@ -167,10 +167,10 @@ function checkGithubRateLimit {
 
 	if (( remaining <= 0 ));
 	then
-		echo "$rateLimitObject" | jq '.' >&2
+		debugMsg "$rateLimitObject" | jq '.'
 		die "Hit rate limit until ${resetTimestamp}!"
 	else
-		echo "Have ${remaining} API calls remaining until ${resetTimestamp}" >&2
+		debugMsg "Have ${remaining} API calls remaining until ${resetTimestamp}"
 	fi
 }
 
