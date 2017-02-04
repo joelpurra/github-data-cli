@@ -19,7 +19,7 @@ function main {
 		local filename="$(basename -s ".sh" -a "$file")"
 		local actionName="${filename#${PROJECT_PREFIX}-}"
 		echo "  ${actionName}"
-	done < <(find "$PWD" -mindepth 1 -maxdepth 1 -type f -name "${PROJECT_PREFIX}-*.sh" -print0)
+	done < <(find "$SOURCE_FOLDER" -mindepth 1 -maxdepth 1 -type f -name "${PROJECT_PREFIX}-*.sh" -print0)
 }
 
 main "$@"

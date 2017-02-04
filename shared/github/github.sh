@@ -1,4 +1,7 @@
 readonly HEADERS_FILE=".headers.json~"
+readonly REPOSITORIES_FILE="repositories.json"
+readonly SOURCES_FILE="sources.json"
+readonly CONTRIBUTORS_FILE="contributors.json"
 
 function fetchGithub {
 	local -a fetchArgs=( "$@" )
@@ -110,9 +113,8 @@ function main {
 
 			pushd "$timestamp" >/dev/null
 
-			fetchAllPages "repositories.json" "https://api.github.com/users/${username}/repos"
-
-			cat "repositories.json" | jq 'map(select((.private or .fork or (.mirror_url | type) != "null") | not))' >"sources.json"
+			fetchGithubRepositories "$username"
+			extractGithubSources
 
 			mkdir -p "contributors"
 
@@ -127,9 +129,9 @@ function main {
 				local contributorsOutfile="${name}.json"
 
 				[[ -s "$contributorsOutfile" ]] || fetchGithub "$contributors" > "$contributorsOutfile"
-			done < <(cat "../sources.json" | jq --raw-output 'map(.name, .contributors_url) | .[]')
+			done < <(cat "${configOutdirDaily}/${SOURCES_FILE}" | jq --raw-output 'map(.name, .contributors_url) | .[]')
 
-			local aggregatedContributorsOutfile="../contributors.json"
+			local aggregatedContributorsOutfile="${configOutdirDaily}/${CONTRIBUTORS_FILE}"
 
 			# Seems jq acts differently if using `cat *.json` versus `jq --slurp '...' *.json`.
 			jq --slurp 'map(map({ login, contributions }) | .[]) | group_by(.login) | map({ login: .[0].login, contributions: (map(.contributions) | add) }) | sort_by(.contributions)' *.json > "$aggregatedContributorsOutfile"
@@ -183,9 +185,9 @@ function fetchGithubRepositories {
 	local -r username="$1"
 	shift
 
-	fetchAllPages "repositories.json" "https://api.github.com/users/${username}/repos"
+	fetchAllPages "${configOutdirDaily}/${REPOSITORIES_FILE}" "https://api.github.com/users/${username}/repos"
 }
 
 function extractGithubSources {
-	cat "repositories.json" | jq 'map(select((.private or .fork or (.mirror_url | type) != "null") | not))' >"sources.json"
+	cat "${configOutdirDaily}/${REPOSITORIES_FILE}" | jq 'map(select((.private or .fork or (.mirror_url | type) != "null") | not))' >"${configOutdirDaily}/${SOURCES_FILE}"
 }

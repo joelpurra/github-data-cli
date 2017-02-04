@@ -6,5 +6,5 @@ set -o pipefail
 
 declare PROJECT_PREFIX="ghd"
 
-readonly configOutputPrefix="output";
+readonly configOutputPrefix="${PWD}/output";
 readonly executionStartTimestamp=$(getUTCDatestamp)
