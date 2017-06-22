@@ -28,6 +28,23 @@ Now execute the main command.
 ghd
 ```
 
+```text
+Usage: ghd <action>
+Source folder: .../github-data-cli
+Actions available in the source folder:
+  contributors
+  diff-contributors
+  diff-help
+  diff-stargazers
+  diff
+  help
+  repositories-help
+  repositories-json
+  repositories-list
+  repositories
+  stargazers
+```
+
 
 
 ## Notes
