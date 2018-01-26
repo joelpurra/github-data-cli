@@ -16,7 +16,12 @@ function getUTCDatestamp {
 }
 
 function getTimestampAtEpoch {
-	date -r "$1" -u +%FT%TZ
+	if date -r "1516963224" &>/dev/null;
+	then
+		date -r "$1" -u +%FT%TZ
+	else
+		date --date "@${1}" -u +%FT%TZ
+	fi
 }
 
 function getMostRecentOutputDates() {
