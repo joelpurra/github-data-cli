@@ -3,6 +3,10 @@ readonly REPOSITORIES_FILE="repositories.json"
 readonly SOURCES_FILE="sources.json"
 readonly CONTRIBUTORS_FILE="contributors.json"
 
+function fetchGithubCurl() {
+	curl --silent --header "User-Agent: ${PROJECT_PREFIX}" --header 'Accept: application/vnd.github.v3+json' "$@"
+}
+
 function fetchGithub {
 	local -a fetchArgs=( "$@" )
 	local url="${fetchArgs[-1]}"
@@ -11,7 +15,29 @@ function fetchGithub {
 	local -a urlParts
 	IFS='?' read -r -a urlParts <<< "$url"
 	local urlWithCredentials="${urlParts[0]}?client_id=${GITHUB_CLIENT_ID}&client_secret=${GITHUB_CLIENT_SECRET}&${urlParts[1]:-}"
-	curl --silent --header "User-Agent: ${PROJECT_PREFIX}" "${fetchArgs[@]}" "$urlWithCredentials"
+
+	fetchGithubCurl "${fetchArgs[@]}" "$urlWithCredentials"
+}
+
+function getLoggedInUsername() {
+	jq --raw-output '.username' "$CONFIG_AUTHORIZATION_FILE"
+}
+
+function getLoggedInToken() {
+	jq --raw-output '.token' "$CONFIG_AUTHORIZATION_FILE"
+}
+
+function loggedInFetchGithub {
+	local -a fetchArgs=( "$@" )
+	local url="${fetchArgs[-1]}"
+	debugMsg "$url"
+	unset fetchArgs[${#fetchArgs[@]}-1]
+
+	local -r loggedInToken="$(getLoggedInToken)"
+	fetchArgs+=("--header")
+	fetchArgs+=("Authorization: token ${loggedInToken}")
+
+	fetchGithubCurl "${fetchArgs[@]}" "$url"
 }
 
 function getNextPageLink {
@@ -42,7 +68,7 @@ function fetchPage {
 
 	if [[ ! -s "$outfile.${pageNumber}~" ]]
 	then
-		local page=$(fetchGithub --dump-header "$HEADERS_FILE" "${url}?page=${pageNumber}")
+		local page=$(fetchGithub "${url}?page=${pageNumber}")
 		local numberOfEntries=$(echo "$page" | getArrayLength)
 
 		if (( numberOfEntries > 0 ));
@@ -181,6 +207,36 @@ function checkGithubPrerequisites {
 	checkGithubRateLimit
 }
 
+function githubAuthenticate {
+	local -r username="$1"
+	shift
+
+	echo "Username: ${username}"
+
+	local password
+	read -e -s -p "Password (not saved): " password
+	echo
+
+	local -r timestamp=$(getUTCDatestamp)
+
+	local token
+
+	token="$(fetchGithub --data "{\"scopes\":[\"public_repo\"],\"note\":\"ghd ${timestamp}\"}" --dump-header "$HEADERS_FILE" "https://${username}:${password}@api.github.com/authorizations" | jq --raw-output '.token')"
+
+	local -r needs2fa="$(grep 'X-GitHub-OTP: required;' "$HEADERS_FILE")"
+
+	if [[ ! -z "$needs2fa" ]];
+	then
+		local token2fa
+		read -e -s -p "Two-factor authentication code: " token2fa
+		echo
+
+		token="$(fetchGithub --data "{\"scopes\":[\"public_repo\"],\"note\":\"ghd ${timestamp}\"}" --dump-header "$HEADERS_FILE" --header "X-GitHub-OTP: ${token2fa}" "https://${username}:${password}@api.github.com/authorizations" | tee ".debug.json~" | jq --raw-output '.token')"
+	fi
+
+	echo "{\"username\":\"${username}\",\"token\":\"${token}\"}" | jq '.' > "${CONFIG_AUTHORIZATION_FILE}"
+}
+
 function fetchGithubRepositories {
 	local -r username="$1"
 	shift
@@ -190,4 +246,22 @@ function fetchGithubRepositories {
 
 function extractGithubSources {
 	cat "${configOutdirDaily}/${REPOSITORIES_FILE}" | jq 'map(select((.private or .fork or (.mirror_url | type) != "null") | not))' >"${configOutdirDaily}/${SOURCES_FILE}"
+}
+
+function starGithubRepository {
+	local -r username="$1"
+	shift
+	local -r repository="$1"
+	shift
+
+	loggedInFetchGithub --request PUT "https://api.github.com/user/starred/${username}/${repository}"
+}
+
+function unstarGithubRepository {
+	local -r username="$1"
+	shift
+	local -r repository="$1"
+	shift
+
+	loggedInFetchGithub --request DELETE "https://api.github.com/user/starred/${username}/${repository}"
 }

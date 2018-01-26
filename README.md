@@ -16,11 +16,17 @@ ln -s "$PWD/ghd" "$HOME/bin/ghd"
 
 ## Usage
 
-Make sure you have loaded relevant github credentials by setting the following environment variables. Get your own credentials by [registering a new github oauth application](https://github.com/settings/applications/new). This is a bit of a hack, as the oauth part won't be used. The values for application name, homepage url, application description, and authorization callback url do not matter for `ghd`; pick your own values.
+Make sure you have loaded relevant github credentials by setting the following environment variables. Get your own credentials by [registering a new github oauth application](https://github.com/settings/applications/new). The values for application name, homepage url, application description, and authorization callback url do not matter for `ghd`; pick your own values.
 
 
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
+
+Authenticate yourself. If enabled, you will be asked for a 2-factor authentication code.
+
+```bash
+ghd authenticate <username>
+```
 
 Now execute the main command.
 
@@ -32,6 +38,7 @@ ghd
 Usage: ghd <action>
 Source folder: .../github-data-cli
 Actions available in the source folder:
+  authenticate
   contributors
   diff-contributors
   diff-help
@@ -42,7 +49,9 @@ Actions available in the source folder:
   repositories-json
   repositories-list
   repositories
+  star
   stargazers
+  unstar
 ```
 
 
@@ -57,4 +66,4 @@ Actions available in the source folder:
 
 
 
-Copyright &copy; 2016, 2017 [Joel Purra](https://joelpurra.com/). Released under [GNU General Public License version 3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl.html).
+Copyright &copy; 2016, 2017, 2018 [Joel Purra](https://joelpurra.com/). Released under [GNU General Public License version 3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl.html).

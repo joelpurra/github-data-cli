@@ -3,6 +3,13 @@ function errorMsg {
 }
 
 function debugMsg {
+	set +u
+	if [[ "$GHD_DEBUG" != "1" ]];
+	then
+		return 0
+	fi
+	set -u
+
 	echo -E "${PROJECT_PREFIX}: DEBUG $@" >&2
 }
 
