@@ -14,9 +14,9 @@ function fetchGithub {
 	unset fetchArgs[${#fetchArgs[@]}-1]
 	local -a urlParts
 	IFS='?' read -r -a urlParts <<< "$url"
-	local urlWithCredentials="${urlParts[0]}?client_id=${GITHUB_CLIENT_ID}&client_secret=${GITHUB_CLIENT_SECRET}&${urlParts[1]:-}"
+	local urlWithCredentials="${urlParts[0]}?${urlParts[1]:-}"
 
-	fetchGithubCurl "${fetchArgs[@]}" "$urlWithCredentials"
+	fetchGithubCurl --basic --user "${GITHUB_CLIENT_ID}:${GITHUB_CLIENT_SECRET}" "${fetchArgs[@]}" "$urlWithCredentials"
 }
 
 function getLoggedInUsername() {
